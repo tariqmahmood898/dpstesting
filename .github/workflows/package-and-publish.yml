@@ -14,6 +14,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
@@ -66,7 +69,7 @@ jobs:
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
 
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_URL: ${{ vars.BASE_URL }}
           IS_PREVIEW: ${{ steps.branch-name.outputs.current_branch != 'master' }}
         run: |
@@ -108,7 +111,7 @@ jobs:
     # if: vars.PUBLISH_REPO != ''
     if: false
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Setup certificate
         shell: bash
@@ -495,7 +498,7 @@ jobs:
       - electron-release
     if: github.event_name != 'workflow_dispatch' && github.ref == 'refs/heads/master' && vars.PUBLISH_REPO != ''
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Set environment variables
         id: variables
