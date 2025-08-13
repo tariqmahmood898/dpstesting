@@ -9,16 +9,6 @@ import isViewAccount from '../../util/isViewAccount';
 import memoize from '../../util/memoize';
 import withCache from '../../util/withCache';
 
-export function selectIsNewWallet(global: GlobalState, isFirstTransactionsLoaded: boolean) {
-  const { activities } = selectCurrentAccountState(global) ?? {};
-
-  if (activities?.idsMain?.length) {
-    return false;
-  }
-
-  return isFirstTransactionsLoaded;
-}
-
 export function selectAccounts(global: GlobalState) {
   return global.accounts?.byId;
 }

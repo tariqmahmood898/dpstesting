@@ -13,7 +13,7 @@ import {
   PORTRAIT_MIN_ASSETS_TAB_VIEW,
   TELEGRAM_GIFTS_SUPER_COLLECTION,
 } from '../../../../config';
-import { requestMutation } from '../../../../lib/fasterdom/fasterdom';
+import { requestMeasure, requestMutation } from '../../../../lib/fasterdom/fasterdom';
 import {
   selectAccountStakingStates,
   selectCurrentAccountState,
@@ -37,6 +37,7 @@ import useElementVisibility from '../../../../hooks/useElementVisibility';
 import useHistoryBack from '../../../../hooks/useHistoryBack';
 import useLang from '../../../../hooks/useLang';
 import useLastCallback from '../../../../hooks/useLastCallback';
+import useScrolledState from '../../../../hooks/useScrolledState';
 import useSyncEffect from '../../../../hooks/useSyncEffect';
 
 import CategoryHeader from '../../../explore/CategoryHeader';
@@ -54,6 +55,8 @@ import { OPEN_CONTEXT_MENU_CLASS_NAME } from './Token';
 import styles from './Content.module.scss';
 
 interface OwnProps {
+  isActive?: boolean;
+  onTabsStuck?: (isStuck: boolean) => void;
   onStakedTokenClick: NoneToVoidFunction;
 }
 
@@ -67,7 +70,6 @@ interface StateProps {
   whitelistedNftAddresses?: string[];
   states?: ApiStakingState[];
   hasVesting: boolean;
-  isFullscreen?: boolean;
   selectedNftsToHide?: {
     addresses: string[];
     isCollection: boolean;
@@ -82,6 +84,7 @@ const MAIN_CONTENT_TABS_LENGTH = Object.values(ContentTab).length / 2;
 let activeNftKey = 0;
 
 function Content({
+  isActive,
   activeContentTab,
   tokensCount,
   nfts,
@@ -93,10 +96,10 @@ function Content({
   selectedNftsToHide,
   states,
   hasVesting,
-  isFullscreen,
   currentSiteCategoryId,
   doesSupportNft,
   collectionTabs,
+  onTabsStuck,
 }: OwnProps & StateProps) {
   const {
     selectToken,
@@ -108,7 +111,7 @@ function Content({
   } = getActions();
 
   const lang = useLang();
-  const { isPortrait } = useDeviceScreen();
+  const { isPortrait, isLandscape } = useDeviceScreen();
   const tabsRef = useRef<HTMLDivElement>();
   const hasNftSelection = Boolean(selectedAddresses?.length);
 
@@ -282,6 +285,12 @@ function Content({
     scrollContainer?.scrollTo(0, 0);
   });
 
+  const {
+    handleScroll: handleContentScroll,
+    isScrolled,
+    update: updateScrolledState,
+  } = useScrolledState();
+
   useHistoryBack({
     isActive: activeTabIndex !== 0,
     onBack: () => handleSwitchTab(ContentTab.Assets),
@@ -295,8 +304,11 @@ function Content({
   const rootMarginTop = STICKY_CARD_INTERSECTION_THRESHOLD - safeAreaTop - 1;
 
   const handleTabIntersection = useLastCallback((e: IntersectionObserverEntry) => {
+    const isStuck = e.intersectionRatio < 1;
+
+    onTabsStuck?.(isStuck);
     requestMutation(() => {
-      e.target.classList.toggle(styles.tabsContainerStuck, e.intersectionRatio < 1);
+      e.target.classList.toggle(styles.tabsContainerStuck, isStuck);
     });
   });
 
@@ -352,6 +364,18 @@ function Content({
     showTokenActivity({ slug });
   });
 
+  // `isScrolled` state should be updated after tab is switched
+  const handleContentTransitionStop = useLastCallback(() => {
+    if (isPortrait) return;
+
+    requestMeasure(() => {
+      const scrollContainer = getScrollableContainer(transitionRef.current, isPortrait);
+      if (scrollContainer) {
+        updateScrolledState(scrollContainer as HTMLElement);
+      }
+    });
+  });
+
   const containerClassName = buildClassName(
     styles.container,
     IS_TOUCH_ENV && 'swipe-container',
@@ -369,6 +393,7 @@ function Content({
 
     return currentCollectionAddress ? <NftCollectionHeader key="collection" /> : (
       <TabList
+        isActive={isActive}
         tabs={tabs}
         activeTab={activeTabIndex}
         onSwitchTab={handleSwitchTab}
@@ -383,30 +408,56 @@ function Content({
     // When assets are shown separately, there is effectively no tab with index 0,
     // so we fall back to next tab to not break parent's component logic.
     if (activeTabIndex === 0 && shouldShowSeparateAssetsPanel) {
-      return <Activity isActive={isActive} totalTokensAmount={totalTokensAmount} />;
+      return (
+        <Activity
+          isActive={isActive}
+          totalTokensAmount={totalTokensAmount}
+          onScroll={isLandscape ? handleContentScroll : undefined}
+        />
+      );
     }
 
     if (currentCollectionAddress && tabs[activeTabIndex].id !== ContentTab.Nft) {
       return (
-        <div className="nfts-container">
-          <Nfts key={`custom:${currentCollectionAddress}`} isActive={isActive} />
+        <div
+          className="nfts-container"
+          onScroll={isLandscape ? handleContentScroll : undefined}
+        >
+          <Nfts
+            key={`custom:${currentCollectionAddress}`}
+            isActive={isActive}
+          />
         </div>
       );
     }
 
     switch (tabs[activeTabIndex].id) {
       case ContentTab.Assets:
-        return <Assets isActive={isActive} onTokenClick={handleClickAsset} onStakedTokenClick={onStakedTokenClick} />;
+        return (
+          <Assets
+            isActive={isActive}
+            onTokenClick={handleClickAsset}
+            onStakedTokenClick={onStakedTokenClick}
+            onScroll={isLandscape ? handleContentScroll : undefined}
+          />
+        );
       case ContentTab.Activity:
-        return <Activity isActive={isActive} totalTokensAmount={totalTokensAmount} />;
+        return (
+          <Activity
+            isActive={isActive}
+            totalTokensAmount={totalTokensAmount}
+            onScroll={isLandscape ? handleContentScroll : undefined}
+          />
+        );
       case ContentTab.Explore:
-        return <Explore isActive={isActive} />;
+        return <Explore isActive={isActive} onScroll={isLandscape ? handleContentScroll : undefined} />;
       case ContentTab.Nft:
         return (
           <Transition
             activeKey={activeNftKey}
             name={isPortrait ? 'slide' : 'slideFade'}
             className="nfts-container"
+            onScroll={isLandscape ? handleContentScroll : undefined}
           >
             <Nfts key={currentCollectionAddress || 'all'} isActive={isActive} />
           </Transition>
@@ -423,7 +474,15 @@ function Content({
 
     return (
       <>
-        <div ref={tabsRef} className={styles.tabsContainer}>
+        <div
+          ref={tabsRef}
+          className={buildClassName(
+            styles.tabsContainer,
+            currentCollectionAddress && styles.tabsContainerForNftCollection,
+            'with-notch-on-scroll',
+            isScrolled && 'is-scrolled',
+          )}
+        >
           <Transition
             name="slideFade"
             className={styles.tabsContent}
@@ -442,6 +501,8 @@ function Content({
           renderCount={mainContentTabsCount + (collectionTabs?.length ?? 0)}
           className={buildClassName(styles.slides, 'content-transition')}
           slideClassName={buildClassName(styles.slide, 'custom-scroll')}
+          onStop={handleContentTransitionStop}
+          onScroll={isLandscape ? handleContentScroll : undefined}
         >
           {renderCurrentTab}
         </Transition>
@@ -468,7 +529,6 @@ function Content({
         isOpen={Boolean(selectedNftsToHide?.addresses.length)}
         selectedNftsToHide={selectedNftsToHide}
       />
-
     </div>
   );
 }
@@ -510,7 +570,6 @@ export default memo(
         states,
         hasVesting,
         currentSiteCategoryId,
-        isFullscreen: global.isFullscreen,
         doesSupportNft,
         collectionTabs,
       };

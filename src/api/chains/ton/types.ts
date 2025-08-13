@@ -226,6 +226,8 @@ export type ParsedTracePart = {
   received: bigint;
   /** The network fee in TON (the fee taken by the blockchain itself) */
   networkFee: bigint;
+  /** Whether the transaction has succeeded */
+  isSuccess: boolean;
 };
 
 export type ParsedTrace = {

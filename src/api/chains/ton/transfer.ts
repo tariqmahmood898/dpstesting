@@ -112,14 +112,7 @@ export async function checkTransactionDraft(
 
     const { isInitialized } = await getContractInfo(network, toAddress);
 
-    if (stateInitString && !isBase64Data) {
-      return {
-        ...result,
-        error: ApiTransactionDraftError.StateInitWithoutBin,
-      };
-    }
-
-    let stateInit;
+    let stateInit: Cell | undefined;
 
     if (stateInitString) {
       try {
@@ -727,15 +720,28 @@ async function isTokenBalanceInsufficient(
   // Accumulate token amounts by address
   const tokenAmountsByAddress: Record<string, bigint> = {};
   const parsedPayloads = payloadParsingResults.map((result) => result?.parsedPayload);
+  let hasUnknownToken = false;
 
   for (const result of payloadParsingResults) {
     if (result?.tokenResult) {
       const { tokenAddress, amount } = result.tokenResult;
+
+      if (!tokenAddress) {
+        // Possible when the jetton wallet is not deployed, therefore the minter address is unknown and set to "".
+        // This is handled in `parsePayloadSlice`. If the sender jetton wallet is not deployed, assuming the balance is 0.
+        hasUnknownToken = true;
+        continue;
+      }
+
       if (!tokenAmountsByAddress[tokenAddress]) {
         tokenAmountsByAddress[tokenAddress] = 0n;
       }
       tokenAmountsByAddress[tokenAddress] += amount;
     }
+  }
+
+  if (hasUnknownToken) {
+    return { hasInsufficientTokenBalance: true, parsedPayloads };
   }
 
   const tokenAddresses = Object.keys(tokenAmountsByAddress);

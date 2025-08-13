@@ -1,5 +1,5 @@
 import React, {
-  memo, useEffect, useRef,
+  memo, useEffect, useRef, useState,
 } from '../../lib/teact/teact';
 import { getActions, withGlobal } from '../../global';
 
@@ -112,6 +112,7 @@ function Main({
 
   const safeAreaTop = IS_CAPACITOR ? getStatusBarHeight() : windowSize.get().safeAreaTop;
   const [isFocused, markIsFocused, unmarkIsFocused] = useFlag(!isBackgroundModeActive());
+  const [noHeaderNotch, setNoHeaderNotch] = useState(false);
 
   const stakingStatus = stakingState ? getStakingStateStatus(stakingState) : 'inactive';
 
@@ -186,7 +187,11 @@ function Main({
         <div className={styles.head}>
           <Warnings onOpenBackupWallet={openBackupWalletModal} />
 
-          <Header withBalance={!shouldHideBalanceInHeader} isScrolled={!isPageAtTop} />
+          <Header
+            withBalance={!shouldHideBalanceInHeader}
+            noNotch={noHeaderNotch}
+            isScrolled={!isPageAtTop}
+          />
 
           <Card
             ref={cardRef}
@@ -207,7 +212,11 @@ function Main({
           )}
         </div>
 
-        <Content onStakedTokenClick={handleEarnClick} />
+        <Content
+          isActive={isActive}
+          onStakedTokenClick={handleEarnClick}
+          onTabsStuck={setNoHeaderNotch}
+        />
       </div>
     );
   }
