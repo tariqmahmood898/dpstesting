@@ -188,6 +188,7 @@ export type ApiSubmitTransferOptions = {
   stateInit?: Cell;
   shouldEncrypt?: boolean;
   isBase64Data?: boolean;
+  noFeeCheck?: boolean;
   // For token transfer
   tokenAddress?: string;
   forwardAmount?: bigint;

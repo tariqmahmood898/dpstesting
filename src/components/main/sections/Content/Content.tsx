@@ -6,9 +6,7 @@ import type { DropdownItem } from '../../../ui/Dropdown';
 import { ContentTab, SettingsState } from '../../../../global/types';
 
 import {
-  IS_CAPACITOR,
   IS_CORE_WALLET,
-  IS_TELEGRAM_APP,
   LANDSCAPE_MIN_ASSETS_TAB_VIEW,
   PORTRAIT_MIN_ASSETS_TAB_VIEW,
   TELEGRAM_GIFTS_SUPER_COLLECTION,
@@ -22,13 +20,11 @@ import {
   selectEnabledTokensCountMemoizedFor,
 } from '../../../../global/selectors';
 import buildClassName from '../../../../util/buildClassName';
-import { getStatusBarHeight } from '../../../../util/capacitor';
 import { captureEvents, SwipeDirection } from '../../../../util/captureEvents';
 import { compact } from '../../../../util/iteratees';
 import { getIsActiveStakingState } from '../../../../util/staking';
-import { getTelegramApp } from '../../../../util/telegram';
 import { IS_TOUCH_ENV, STICKY_CARD_INTERSECTION_THRESHOLD } from '../../../../util/windowEnvironment';
-import windowSize from '../../../../util/windowSize';
+import { calcSafeAreaTop } from '../../helpers/calcSafeAreaTop';
 import { getScrollableContainer } from '../../helpers/scrollableContainer';
 
 import { useDeviceScreen } from '../../../../hooks/useDeviceScreen';
@@ -296,12 +292,8 @@ function Content({
     onBack: () => handleSwitchTab(ContentTab.Assets),
   });
 
-  const safeAreaTop = IS_CAPACITOR
-    ? getStatusBarHeight()
-    : IS_TELEGRAM_APP
-      ? getTelegramApp()!.safeAreaInset.top + getTelegramApp()!.contentSafeAreaInset.top
-      : windowSize.get().safeAreaTop;
-  const rootMarginTop = STICKY_CARD_INTERSECTION_THRESHOLD - safeAreaTop - 1;
+  const safeAreaTop = calcSafeAreaTop();
+  const intersectionRootMarginTop = STICKY_CARD_INTERSECTION_THRESHOLD - safeAreaTop - 1;
 
   const handleTabIntersection = useLastCallback((e: IntersectionObserverEntry) => {
     const isStuck = e.intersectionRatio < 1;
@@ -315,7 +307,7 @@ function Content({
   useElementVisibility({
     isDisabled: !isPortrait,
     targetRef: tabsRef,
-    rootMargin: `${rootMarginTop}px 0px 0px 0px`,
+    rootMargin: `${intersectionRootMarginTop}px 0px 0px 0px`,
     threshold: [1],
     cb: handleTabIntersection,
   });

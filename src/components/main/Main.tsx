@@ -6,7 +6,7 @@ import { getActions, withGlobal } from '../../global';
 import type { ApiStakingState } from '../../api/types';
 import { ActiveTab, ContentTab, type Theme } from '../../global/types';
 
-import { IS_CAPACITOR, IS_CORE_WALLET } from '../../config';
+import { IS_CORE_WALLET } from '../../config';
 import {
   selectAccountStakingState,
   selectCurrentAccount,
@@ -18,13 +18,12 @@ import {
 } from '../../global/selectors';
 import { useAccentColor } from '../../util/accentColor';
 import buildClassName from '../../util/buildClassName';
-import { getStatusBarHeight } from '../../util/capacitor';
 import { captureEvents, SwipeDirection } from '../../util/captureEvents';
 import { getStakingStateStatus } from '../../util/staking';
 import {
   IS_DELEGATED_BOTTOM_SHEET, IS_ELECTRON, IS_TOUCH_ENV, REM,
 } from '../../util/windowEnvironment';
-import windowSize from '../../util/windowSize';
+import { calcSafeAreaTop } from './helpers/calcSafeAreaTop';
 
 import useAppTheme from '../../hooks/useAppTheme';
 import useBackgroundMode, { isBackgroundModeActive } from '../../hooks/useBackgroundMode';
@@ -110,9 +109,10 @@ function Main({
   const portraitContainerRef = useRef<HTMLDivElement>();
   const landscapeContainerRef = useRef<HTMLDivElement>();
 
-  const safeAreaTop = IS_CAPACITOR ? getStatusBarHeight() : windowSize.get().safeAreaTop;
+  const safeAreaTop = calcSafeAreaTop();
   const [isFocused, markIsFocused, unmarkIsFocused] = useFlag(!isBackgroundModeActive());
-  const [noHeaderNotch, setNoHeaderNotch] = useState(false);
+  const [areTabsStuck, setAreTabsStuck] = useState(false);
+  const intersectionRootMarginTop = HEADER_HEIGHT_REM * REM + safeAreaTop;
 
   const stakingStatus = stakingState ? getStakingStateStatus(stakingState) : 'inactive';
 
@@ -135,14 +135,14 @@ function Main({
   const { isVisible: isPageAtTop } = useElementVisibility({
     isDisabled: !isPortrait || !isActive,
     targetRef: cardRef,
-    rootMargin: `-${HEADER_HEIGHT_REM * REM + safeAreaTop}px 0px 0px 0px`,
+    rootMargin: `-${intersectionRootMarginTop}px 0px 0px 0px`,
     threshold: [1],
   });
 
   const { isVisible: shouldHideBalanceInHeader } = useElementVisibility({
     isDisabled: !isPortrait || !isActive,
     targetRef: cardRef,
-    rootMargin: `-${HEADER_HEIGHT_REM * REM}px 0px 0px 0px`,
+    rootMargin: `-${intersectionRootMarginTop}px 0px 0px 0px`,
   });
 
   const handleTokenCardClose = useLastCallback(() => {
@@ -189,7 +189,7 @@ function Main({
 
           <Header
             withBalance={!shouldHideBalanceInHeader}
-            noNotch={noHeaderNotch}
+            areTabsStuck={areTabsStuck}
             isScrolled={!isPageAtTop}
           />
 
@@ -215,7 +215,7 @@ function Main({
         <Content
           isActive={isActive}
           onStakedTokenClick={handleEarnClick}
-          onTabsStuck={setNoHeaderNotch}
+          onTabsStuck={setAreTabsStuck}
         />
       </div>
     );

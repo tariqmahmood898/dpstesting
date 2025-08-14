@@ -5,17 +5,27 @@
 .header {
   z-index: var(--z-header);
 
-  @include mixins.transition(background-color 300ms ease-out);
-
   @include mixins.respond-below(xs) {
     position: fixed;
     top: 0;
     left: 0;
-
     width: 100%;
 
-    background-color: var(--background-color);
-    backdrop-filter: saturate(180%) blur(20px);
+    &::before {
+      content: '';
+
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+
+      width: 100%;
+
+      background-color: var(--background-color);
+      backdrop-filter: saturate(180%) blur(20px);
+
+      @include mixins.transition('bottom 150ms, background-color 300ms ease-out');
+    }
 
     :global(html.is-electron:not(.is-linux)) & {
       top: var(--electron-header-height);
@@ -25,15 +35,28 @@
 
     &::after {
       opacity: 0;
-      transition: opacity 200ms;
+
+      @include mixins.transition('bottom 150ms, opacity 200ms');
     }
 
     &.isScrolled {
-      background-color: var(--color-background-tab-bar);
+      &::before {
+        background-color: var(--color-background-tab-bar);
+      }
 
-      &:not(.noNotch)::after {
+      &::after {
         opacity: 1;
       }
+    }
+
+    &.isScrolled.areTabsStuck::after,
+    &.areTabsStuck::before {
+      bottom: calc(-1 * #{v.$portraitHeaderHeight});
+    }
+
+    // Fix for Opera, dead zone of 37 pixels in extension window on Windows
+    :global(html.is-windows.is-opera.is-extension) & {
+      padding-top: 1.875rem;
     }
   }
 

@@ -11,7 +11,7 @@ import {
 import { compareActivities } from '../../util/compareActivities';
 import { buildCollectionByKey, extractKey, mapValues, unique } from '../../util/iteratees';
 import { replaceActivityId } from '../helpers/misc';
-import { selectAccount, selectAccountState } from '../selectors';
+import { selectAccountOrAuthAccount, selectAccountState } from '../selectors';
 import { updateAccountState } from './misc';
 
 /**
@@ -335,13 +335,10 @@ function mergeIdsBySlug(
 function areAllInitialActivitiesLoaded(
   global: GlobalState,
   accountId: string,
-  newAreInitialActivitiesLoaded?: Partial<Record<ApiChain, boolean>>,
+  newAreInitialActivitiesLoaded: Partial<Record<ApiChain, boolean>>,
 ) {
-  const { addressByChain } = selectAccount(global, accountId) ?? {};
-
-  if (!newAreInitialActivitiesLoaded || !addressByChain) {
-    return false;
-  }
+  // The initial activities may be loaded and added before the authentication completes
+  const { addressByChain } = selectAccountOrAuthAccount(global, accountId) ?? { addressByChain: {} };
 
   return Object.keys(addressByChain).every((chain) => newAreInitialActivitiesLoaded[chain as ApiChain]);
 }

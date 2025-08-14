@@ -23,7 +23,7 @@ export const HEADER_HEIGHT_REM = 3;
 interface OwnProps {
   isScrolled?: boolean;
   withBalance?: boolean;
-  noNotch?: boolean;
+  areTabsStuck?: boolean;
 }
 
 interface StateProps {
@@ -36,7 +36,7 @@ interface StateProps {
 function Header({
   isViewMode,
   withBalance,
-  noNotch,
+  areTabsStuck,
   isScrolled,
   isAppLockEnabled,
   isSensitiveDataHidden,
@@ -48,7 +48,7 @@ function Header({
   if (isPortrait) {
     const fullClassName = buildClassName(
       styles.header,
-      noNotch && styles.noNotch,
+      areTabsStuck && styles.areTabsStuck,
       isScrolled && styles.isScrolled,
     );
     const iconsAmount = 1 + (isAppLockEnabled ? 1 : 0) + (IS_TELEGRAM_APP ? 1 : 0) + (canToggleAppLayout ? 1 : 0);
@@ -91,7 +91,7 @@ function Header({
   );
 }
 
-export default memo(withGlobal(
+export default memo(withGlobal<OwnProps>(
   (global): StateProps => {
     const {
       isFullscreen,

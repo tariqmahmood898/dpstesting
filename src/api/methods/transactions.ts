@@ -101,6 +101,7 @@ export async function submitTransfer(
     withDiesel,
     dieselAmount,
     isGaslessWithStars,
+    noFeeCheck,
   } = options;
   const stateInit = typeof options.stateInit === 'string' ? Cell.fromBase64(options.stateInit) : options.stateInit;
 
@@ -132,6 +133,7 @@ export async function submitTransfer(
       isBase64Data,
       stateInit,
       fee,
+      noFeeCheck,
     });
   }
 
