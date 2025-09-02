@@ -1,5 +1,3 @@
-**TON Wallet** is a fork of **MyTonWallet**.
-
 ---
 
 # MyTonWallet · [mytonwallet.io](https://mytonwallet.io)
@@ -15,7 +13,6 @@ The wallet is **self-custodial and safe**. The developers **do not** have access
 - [Local Setup](#local-setup)
 - [Dev Mode](#dev-mode)
 - [Linux](#linux-desktop-troubleshooting)
-- [Electron](./docs/electron.md)
 
 ## Requirements
 
