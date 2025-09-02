@@ -170,7 +170,7 @@ export default function createConfig(
         stats: 'minimal',
       },
       headers: {
-        'Content-Security-Policy': CSP,
+        //'Content-Security-Policy': CSP,
       },
     },
 
