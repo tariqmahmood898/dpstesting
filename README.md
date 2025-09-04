@@ -10,7 +10,6 @@ The wallet is **self-custodial and safe**. The developers **do not** have access
 ## Table of contents
 
 - [Requirements](#requirements)
-- [Local Setup](#local-setup)
 - [Dev Mode](#dev-mode)
 - [Linux](#linux-desktop-troubleshooting)
 
